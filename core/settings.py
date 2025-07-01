@@ -51,6 +51,8 @@ INSTALLED_APPS = [
     # local
     'hello.apps.HelloConfig',
     'library.apps.LibraryConfig',
+    'task_manager.apps.TaskManagerConfig',
+
 ]
 
 MIDDLEWARE = [
