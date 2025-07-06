@@ -13,3 +13,12 @@ class SubTask(models.Model):
 
     def __str__(self):
         return f"{self.title} → {self.task.title}"
+
+    class Meta:
+        db_table = 'task_manager_subtask'
+        ordering = ['-created_at']
+        verbose_name = 'SubTask'
+        verbose_name_plural = 'SubTasks'
+        constraints = [
+            models.UniqueConstraint(fields=['title'], name='unique_subtask_title'),
+        ]

@@ -17,10 +17,18 @@ class Task(models.Model):
     deadline = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)
 
-    # Я так понимаю "title: Название задачи. Уникально для даты." имеется ввиду уникально для дедлайна?
-    class Meta:
-        unique_together = ('title', 'deadline')
-        ordering = ['-created_at'] #order by
-
     def __str__(self):
         return self.title
+
+    # В пред. ДЗ было задание: "title: Название задачи. Уникально для даты." имеется ввиду уникально для дедлайна?
+    # Теперь просто "уникальность по title."
+    class Meta:
+        db_table = 'task_manager_task'
+        ordering = ['-created_at']
+        verbose_name = 'Task'
+        verbose_name_plural = 'Tasks'
+        constraints = [
+            models.UniqueConstraint(fields=['title'], name='unique_task_title')
+        ]
+
+
