@@ -6,7 +6,7 @@ class SubTask(models.Model):
 
     title = models.CharField(max_length=100)
     description = models.TextField()
-    task =models.ForeignKey(Task, on_delete=models.CASCADE, related_name='subtasks') #subtasks ссылается на Task, у которого по-атрибуту можно получить все подзадачи
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='subtasks') #subtasks ссылается на Task, у которого по-атрибуту можно получить все подзадачи
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='NEW')
     deadline = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)
