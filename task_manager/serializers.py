@@ -4,12 +4,6 @@ from datetime import datetime
 
 from .models import Task, SubTask, Category
 
-class TaskSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Task
-        fields = ['id', 'title', 'description', 'status', 'deadline', 'created_at']
-
 
 class SubTaskSerializer(serializers.ModelSerializer):
     class Meta:
@@ -31,7 +25,7 @@ class TaskDetailSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'description', 'status', 'deadline', 'created_at', 'subtasks']
 
 
-class TaskCreateSerializer(serializers.ModelSerializer):
+class TaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = Task
         fields = ['id', 'title', 'categories', 'description', 'status', 'deadline', 'created_at']
