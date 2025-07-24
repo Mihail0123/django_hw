@@ -1,19 +1,17 @@
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, action
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework import status
 from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListCreateAPIView
+from rest_framework.viewsets import ModelViewSet
 from django.utils import timezone
 from django.db.models import Count
-from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 
 
 
-from .models import Task, SubTask
+from .models import Task, SubTask, Category
 from .pagination import SubTaskPagination
-from .serializers import TaskSerializer, SubTaskSerializer, SubTaskCreateSerializer
+from .serializers import TaskSerializer, SubTaskSerializer, CategorySerializer
 
 
 # Create your views here.
@@ -64,3 +62,12 @@ class SubTaskListCreateView(ListCreateAPIView):
 class SubTaskDetailView(RetrieveUpdateDestroyAPIView):
    queryset = SubTask.objects.select_related('task').all()
    serializer_class = SubTaskSerializer
+
+class CategoryViewSet(ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+
+    @action(detail=False, methods=['get'])
+    def count_tasks(self, request):
+        data = Category.objects.annotate(task_count=Count('task')).values('id', 'name', 'task_count')
+        return Response(data)
