@@ -1,5 +1,7 @@
 from rest_framework.decorators import api_view, action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListCreateAPIView
 from rest_framework.viewsets import ModelViewSet
@@ -11,6 +13,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 from .models import Task, SubTask, Category
 from .pagination import SubTaskPagination
+from .permissions import IsAuthorOrReadOnly
 from .serializers import TaskSerializer, SubTaskSerializer, CategorySerializer
 
 
@@ -19,6 +22,10 @@ from .serializers import TaskSerializer, SubTaskSerializer, CategorySerializer
 class TaskListCreateView(ListCreateAPIView):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
 
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['status', 'deadline']
@@ -27,10 +34,12 @@ class TaskListCreateView(ListCreateAPIView):
     ordering = ('-created_at',)
 
 
+
 # Получение конкретной задачи по id
 class TaskDetailView(RetrieveUpdateDestroyAPIView):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
+    permission_classes = [IsAuthorOrReadOnly]
 
 # Агрегирующий эндпоинт со статистикой задач
 @api_view(['GET'])
@@ -51,6 +60,13 @@ class SubTaskListCreateView(ListCreateAPIView):
     queryset = SubTask.objects.select_related('task').all()
     serializer_class = SubTaskSerializer
     pagination_class = SubTaskPagination
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        task = serializer.validated_data['task']
+        if task.author != self.request.user:
+            raise PermissionDenied("You are not the author of this task")
+        serializer.save()
 
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['status', 'deadline']
@@ -63,10 +79,22 @@ class SubTaskListCreateView(ListCreateAPIView):
 class SubTaskDetailView(RetrieveUpdateDestroyAPIView):
    queryset = SubTask.objects.select_related('task').all()
    serializer_class = SubTaskSerializer
+   permission_classes = [IsAuthenticated]
+
+   def perform_update(self, serializer):
+       if self.get_object().task.author != self.request.user:
+           raise PermissionDenied("You are not the author of this task")
+       serializer.save()
+
+   def perform_destroy(self, instance):
+       if instance.task.author != self.request.user:
+           raise PermissionDenied("You are not the author of this task")
+       instance.delete()
 
 class CategoryViewSet(ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+    permission_classes = [IsAuthenticated]
 
     @action(detail=False, methods=['get'])
     def count_tasks(self, request):
