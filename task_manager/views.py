@@ -24,6 +24,7 @@ class TaskListCreateView(ListCreateAPIView):
     filterset_fields = ['status', 'deadline']
     search_fields = ['title', 'description']
     ordering_fields = ['created_at']
+    ordering = ('-created_at',)
 
 
 # Получение конкретной задачи по id
