@@ -6,9 +6,10 @@ from .models import Task, SubTask, Category
 
 
 class SubTaskSerializer(serializers.ModelSerializer):
+    owner = serializers.ReadOnlyField(source='owner.username')
     class Meta:
         model = SubTask
-        fields = ['id', 'title', 'description', 'task', 'status', 'deadline', 'created_at']
+        fields = ['id', 'title', 'description', 'task', 'status', 'deadline', 'created_at', 'owner']
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -26,9 +27,10 @@ class TaskDetailSerializer(serializers.ModelSerializer):
 
 
 class TaskSerializer(serializers.ModelSerializer):
+    owner = serializers.ReadOnlyField(source='owner.username')
     class Meta:
         model = Task
-        fields = ['id', 'title', 'categories', 'description', 'status', 'deadline', 'created_at']
+        fields = ['id', 'title', 'categories', 'description', 'status', 'deadline', 'created_at', 'owner']
 
     def validate_deadline(self, value):
         if value < datetime.now(value.tzinfo):

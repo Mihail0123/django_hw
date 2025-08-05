@@ -1,5 +1,6 @@
 from django.db import models
 from .category import Category
+from django.contrib.auth import get_user_model
 
 class Task(models.Model):
     STATUS_CHOICES = (
@@ -16,6 +17,7 @@ class Task(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='NEW')
     deadline = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)
+    owner = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='tasks')
 
     def __str__(self):
         return self.title

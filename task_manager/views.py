@@ -3,7 +3,7 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListCreateAPIView
+from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListCreateAPIView, ListAPIView
 from rest_framework.viewsets import ModelViewSet
 from django.utils import timezone
 from django.db.models import Count
@@ -13,7 +13,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 from .models import Task, SubTask, Category
 from .pagination import SubTaskPagination
-from .permissions import IsAuthorOrReadOnly
+from .permissions import IsOwnerOrReadOnly
 from .serializers import TaskSerializer, SubTaskSerializer, CategorySerializer
 
 
@@ -25,7 +25,7 @@ class TaskListCreateView(ListCreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        serializer.save(owner=self.request.user)
 
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['status', 'deadline']
@@ -39,7 +39,7 @@ class TaskListCreateView(ListCreateAPIView):
 class TaskDetailView(RetrieveUpdateDestroyAPIView):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
-    permission_classes = [IsAuthorOrReadOnly]
+    permission_classes = [IsOwnerOrReadOnly]
 
 # Агрегирующий эндпоинт со статистикой задач
 @api_view(['GET'])
@@ -64,9 +64,9 @@ class SubTaskListCreateView(ListCreateAPIView):
 
     def perform_create(self, serializer):
         task = serializer.validated_data['task']
-        if task.author != self.request.user:
-            raise PermissionDenied("You are not the author of this task")
-        serializer.save()
+        if task.owner != self.request.user:
+            raise PermissionDenied("You are not the owner of this task")
+        serializer.save(owner=self.request.user)
 
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['status', 'deadline']
@@ -79,16 +79,16 @@ class SubTaskListCreateView(ListCreateAPIView):
 class SubTaskDetailView(RetrieveUpdateDestroyAPIView):
    queryset = SubTask.objects.select_related('task').all()
    serializer_class = SubTaskSerializer
-   permission_classes = [IsAuthenticated]
+   permission_classes = [IsOwnerOrReadOnly]
 
    def perform_update(self, serializer):
-       if self.get_object().task.author != self.request.user:
-           raise PermissionDenied("You are not the author of this task")
+       if self.get_object().task.owner != self.request.user:
+           raise PermissionDenied("You are not the owner of this task")
        serializer.save()
 
    def perform_destroy(self, instance):
-       if instance.task.author != self.request.user:
-           raise PermissionDenied("You are not the author of this task")
+       if instance.task.owner != self.request.user:
+           raise PermissionDenied("You are not the owner of this task")
        instance.delete()
 
 class CategoryViewSet(ModelViewSet):
@@ -100,3 +100,11 @@ class CategoryViewSet(ModelViewSet):
     def count_tasks(self, request):
         data = Category.objects.annotate(task_count=Count('task')).values('id', 'name', 'task_count')
         return Response(data)
+
+
+class MyTaskView(ListAPIView):
+    serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Task.objects.filter(owner=self.request.user)
