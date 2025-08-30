@@ -1,8 +1,9 @@
 from rest_framework import status
+from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import api_view, action
 from rest_framework.exceptions import PermissionDenied, ParseError
 from rest_framework.filters import SearchFilter, OrderingFilter
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.generics import (
     RetrieveUpdateDestroyAPIView, ListCreateAPIView, ListAPIView, CreateAPIView
@@ -119,7 +120,8 @@ class MyTaskView(ListAPIView):
 class RegisterView(CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
-    permission_classes = []
+    permission_classes = [AllowAny]
+    authentication_classes = []
 
 
 class LogoutView(APIView):

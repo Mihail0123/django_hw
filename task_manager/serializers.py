@@ -1,3 +1,4 @@
+from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.validators import UniqueValidator
@@ -69,19 +70,36 @@ class CategoryCreateSerializer(serializers.ModelSerializer):
 class RegisterSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(
         required=True,
-        validators=[UniqueValidator(queryset=User.objects.all())]
+        validators=[UniqueValidator(queryset=User.objects.all(), message="Email already in use")]
+    )
+    username = serializers.CharField(
+        required=True,
+        validators=[UniqueValidator(queryset=User.objects.all(), message="Username already taken")]
     )
     password = serializers.CharField(
         write_only=True,
-        min_length=8,
+        required=True,
+        validators=[validate_password],           #  подключаем сложность пароля
+        style={'input_type': 'password'}
+    )
+    password2 = serializers.CharField(            #  подтверждение пароля
+        write_only=True,
+        required=True,
         style={'input_type': 'password'}
     )
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'password')
+        fields = ('id', 'username', 'email', 'password', 'password2')
+
+    def validate(self, attrs):
+        if attrs['password'] != attrs['password2']:
+            raise serializers.ValidationError({'password': 'Passwords do not match'})
+        return attrs
 
     def create(self, validated_data):
+        validated_data.pop('password2')
+        # create_user сам хэширует пароль
         user = User.objects.create_user(
             username=validated_data['username'],
             email=validated_data['email'],
