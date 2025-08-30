@@ -3,18 +3,19 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListCreateAPIView, ListAPIView
+from rest_framework.generics import (
+    RetrieveUpdateDestroyAPIView, ListCreateAPIView, ListAPIView, CreateAPIView
+)
 from rest_framework.viewsets import ModelViewSet
 from django.utils import timezone
+from django.contrib.auth.models import User
 from django.db.models import Count
 from django_filters.rest_framework import DjangoFilterBackend
-
-
 
 from .models import Task, SubTask, Category
 from .pagination import SubTaskPagination
 from .permissions import IsOwnerOrReadOnly
-from .serializers import TaskSerializer, SubTaskSerializer, CategorySerializer
+from .serializers import TaskSerializer, SubTaskSerializer, CategorySerializer, RegisterSerializer
 
 
 # Create your views here.
@@ -108,3 +109,9 @@ class MyTaskView(ListAPIView):
 
     def get_queryset(self):
         return Task.objects.filter(owner=self.request.user)
+
+
+class RegisterView(CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = RegisterSerializer
+    permission_classes = []
