@@ -1,21 +1,24 @@
+from rest_framework import status
 from rest_framework.decorators import api_view, action
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ParseError
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.generics import (
     RetrieveUpdateDestroyAPIView, ListCreateAPIView, ListAPIView, CreateAPIView
 )
+from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from django.utils import timezone
 from django.contrib.auth.models import User
 from django.db.models import Count
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import Task, SubTask, Category
 from .pagination import SubTaskPagination
 from .permissions import IsOwnerOrReadOnly
-from .serializers import TaskSerializer, SubTaskSerializer, CategorySerializer, RegisterSerializer
+from .serializers import TaskSerializer, SubTaskSerializer, CategorySerializer, RegisterSerializer, LogoutSerializer
 
 
 # Create your views here.
@@ -111,7 +114,26 @@ class MyTaskView(ListAPIView):
         return Task.objects.filter(owner=self.request.user)
 
 
+#User
+
 class RegisterView(CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = []
+
+
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = LogoutSerializer
+
+    def post(self, request):
+        refresh_token = request.data.get("refresh")
+        if refresh_token is None:
+            raise ParseError("Refresh token is required.")
+
+        try:
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response({"detail": "Logout successful."}, status=status.HTTP_205_RESET_CONTENT)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
